@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import {Button, Col, Container, Row} from 'react-bootstrap';
 import './App.css';
 import {Canvas} from "./Canvas";
-import {NullableGameState, NullablePlayerColor, PlayerColor} from "./GameState";
+import {GlobalState, MutableState, NullablePlayerColor, PlayerColor, Screen} from "./State";
 
 const BOARD_WIDTH = 14;
 const BOARD_HEIGHT = 14;
@@ -13,7 +13,13 @@ const CELL_WIDTH_PX = 40;
 const OFFSET_PX = 0.5;
 const CELL_PADDING_PX = 2;
 
-const GameStateContext = React.createContext<NullableGameState>(null);
+const MutableStateContext = React.createContext<MutableState>({
+    globalState: {
+        screen: Screen.Lobby,
+        gameState: null
+    },
+    updateGlobalState: (_: (state: GlobalState) => GlobalState) => {}
+});
 
 function getInitialBoard() {
     const board: NullablePlayerColor[][] = [];
@@ -52,25 +58,17 @@ function drawSquare(ctx: CanvasRenderingContext2D, row: number, col: number, col
 }
 
 function App() {
-    const [gameState, setGameState] = useState<NullableGameState>(null);
-
-    const initializeGameState = () => {
-        setGameState({
-            board: getInitialBoard(),
-            turn: PlayerColor.Orange,
-            piecesRemaining: [],
-            currentPieceOrientations: [],
-            selectedPiece: null,
-            winners: null
-        });
-    };
+    const [globalState, setGlobalState] = useState<GlobalState>({
+        screen: Screen.Lobby,
+        gameState: null
+    });
 
     const draw = (ctx: CanvasRenderingContext2D, frameCount: number) => {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         for (let row = 0; row < BOARD_HEIGHT; row++) {
             for (let col = 0; col < BOARD_WIDTH; col++) {
-                const color = gameState!.board[row][col];
+                const color = globalState.gameState!.board[row][col];
                 if (color === PlayerColor.Orange || color === PlayerColor.Blue) {
                     drawSquare(ctx, row, col, color);
                 }
@@ -91,17 +89,60 @@ function App() {
         ctx.stroke();
     };
 
+    const mutableState = {
+        globalState: globalState,
+        updateGlobalState: (globalStateUpdater: (state: GlobalState) => GlobalState) =>
+            setGlobalState((prevGlobalState: GlobalState) => globalStateUpdater(prevGlobalState))
+    };
+
+    const switchToSelectColor = () => setGlobalState((prevGlobalState: GlobalState) => ({
+        screen: Screen.SelectColor,
+        gameState: prevGlobalState.gameState
+    }));
+
     return (
-        <GameStateContext.Provider value={gameState}>
+        <MutableStateContext.Provider value={mutableState}>
             <Container>
                 <Row>
                     <Col>
                         <h1>Blokus</h1>
-                        { gameState ? <Canvas draw={draw}/> : <Button onClick={initializeGameState}>Play versus AI</Button>}
+                        {globalState.screen === Screen.Lobby && <Button onClick={switchToSelectColor}>Play versus AI</Button>}
+                        {globalState.screen === Screen.SelectColor && <ColorChooser/>}
+                        { globalState.screen === Screen.InGame && <Canvas draw={draw}/> }
                     </Col>
                 </Row>
             </Container>
-        </GameStateContext.Provider>
+        </MutableStateContext.Provider>
+    );
+}
+
+function ColorChooser() {
+    function selectColor(color: PlayerColor, updateGlobalState: (globalStateUpdater: (globalState: GlobalState) => GlobalState) => void) {
+        // initializes the game state
+        updateGlobalState((_: GlobalState) => ({
+            screen: Screen.InGame,
+            gameState: {
+                board: getInitialBoard(),
+                turn: PlayerColor.Orange,
+                color: color,
+                piecesRemaining: [],
+                currentPieceOrientations: [],
+                selectedPiece: null,
+                winners: null
+            }
+        }));
+    }
+
+    return (
+        <MutableStateContext.Consumer>
+            {({updateGlobalState}) => (
+                <div>
+                    <div>Which color do you want to play as?</div>
+                    <Button style={{backgroundColor: "orange"}} className="mr-2" onClick={() => selectColor(PlayerColor.Orange, updateGlobalState)}>Orange (plays first)</Button>
+                    <Button style={{backgroundColor: "blue"}} onClick={() => selectColor(PlayerColor.Blue, updateGlobalState)}>Blue (plays second)</Button>
+                </div>
+            )}
+        </MutableStateContext.Consumer>
     );
 }
 
