@@ -1,4 +1,5 @@
 import React, {useEffect, useRef} from "react";
+import {MutableStateContext} from "./State";
 
 interface Props {
     draw: (ctx: CanvasRenderingContext2D, frameCount: number) => void;
@@ -27,5 +28,19 @@ export function Canvas(props: Props) {
         }
     }, [draw]);
 
-    return <canvas ref={canvasRef} width={800} height={800}/>;
+    return (
+        <MutableStateContext.Consumer>
+            {({globalState}) => (
+                <div>
+                    You are playing as {globalState.gameState!.color}.<br />
+                    {globalState.gameState!.color === globalState.gameState!.turn ?
+                        <span>It's your turn. Select a piece from the ones shown to the right.</span> :
+                        <span>It's {globalState.gameState!.turn}'s turn.</span>
+                    }
+                    <br/>
+                    <canvas ref={canvasRef} width={800} height={800}/>
+                </div>
+            )}
+        </MutableStateContext.Consumer>
+    );
 }

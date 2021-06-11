@@ -1,6 +1,8 @@
+import React from "react";
+
 export enum PlayerColor {
-    Orange = 0,
-    Blue = 1
+    Orange = "orange",
+    Blue = "blue"
 }
 
 export enum Screen {
@@ -28,7 +30,17 @@ export interface GlobalState {
     gameState: NullableGameState;
 }
 
+export type GlobalStateUpdater = (globalStateUpdater: (globalState: GlobalState) => GlobalState) => void;
+
 export interface MutableState {
     globalState: GlobalState;
-    updateGlobalState: (globalStateUpdater: (globalState: GlobalState) => GlobalState) => void;
+    updateGlobalState: GlobalStateUpdater
 }
+
+export const MutableStateContext = React.createContext<MutableState>({
+    globalState: {
+        screen: Screen.Lobby,
+        gameState: null
+    },
+    updateGlobalState: (_: (state: GlobalState) => GlobalState) => {}
+});

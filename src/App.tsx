@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import {Button, Col, Container, Row} from 'react-bootstrap';
 import './App.css';
 import {Canvas} from "./Canvas";
-import {GlobalState, MutableState, NullablePlayerColor, PlayerColor, Screen} from "./State";
+import {GlobalState, NullablePlayerColor, PlayerColor, Screen, MutableStateContext} from "./State";
 
 const BOARD_WIDTH = 14;
 const BOARD_HEIGHT = 14;
@@ -12,14 +12,6 @@ const BOARD_PADDING_PX = 0; // padding
 const CELL_WIDTH_PX = 40;
 const OFFSET_PX = 0.5;
 const CELL_PADDING_PX = 2;
-
-const MutableStateContext = React.createContext<MutableState>({
-    globalState: {
-        screen: Screen.Lobby,
-        gameState: null
-    },
-    updateGlobalState: (_: (state: GlobalState) => GlobalState) => {}
-});
 
 function getInitialBoard() {
     const board: NullablePlayerColor[][] = [];
