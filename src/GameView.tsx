@@ -95,38 +95,73 @@ export function GameView() {
 }
 
 function pieceTilesToPixels(row: number, col: number) {
-    return [(row - 0.5) * PIECE_TILE_WIDTH_PX + TILE_CANVAS_WIDTH_PX / 2, (col - 0.5) * PIECE_TILE_WIDTH_PX + TILE_CANVAS_WIDTH_PX / 2];
+    return [(col - 0.5) * PIECE_TILE_WIDTH_PX + TILE_CANVAS_WIDTH_PX / 2, (row - 0.5) * PIECE_TILE_WIDTH_PX + TILE_CANVAS_WIDTH_PX / 2];
 }
 
-const TILE_CANVAS_WIDTH_PX = 100;
+const CANVAS_BORDER_WIDTH_PX = 1;
+const TILE_CANVAS_WIDTH_PX = 100 - CANVAS_BORDER_WIDTH_PX * 2;
 const PIECE_TILE_WIDTH_PX = 15;
 
-function drawPiece(piece: [number, number][], ctx: CanvasRenderingContext2D) {
+function drawPiece(piece: [number, number][], orientation: number, ctx: CanvasRenderingContext2D, color: PlayerColor) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     let topLeft = pieceTilesToPixels(0, 0);
     ctx.beginPath();
     ctx.rect(topLeft[0], topLeft[1], PIECE_TILE_WIDTH_PX, PIECE_TILE_WIDTH_PX);
+    ctx.fillStyle = color;
+    ctx.fill();
     ctx.stroke();
     for (const tile of piece) {
-        topLeft = pieceTilesToPixels(tile[0], tile[1]);
+        const orientedCoords = applyOrientation(tile[0], tile[1], orientation);
+        topLeft = pieceTilesToPixels(orientedCoords[0], orientedCoords[1]);
         ctx.beginPath();
         ctx.rect(topLeft[0], topLeft[1], PIECE_TILE_WIDTH_PX, PIECE_TILE_WIDTH_PX);
+        ctx.fillStyle = color;
+        ctx.fill();
         ctx.stroke();
     }
+}
+
+function applyOrientation(row: number, col: number, orientation: number): [number, number] {
+    switch (orientation) {
+        case 0:
+            return [row, col];
+        case 1:
+            return [-col, row];
+        case 2:
+            return [-row, -col];
+        case 3:
+            return [col, -row];
+        case 4:
+            return [row, -col];
+        case 5:
+            return [col, row];
+        case 6:
+            return [-row, col];
+        case 7:
+            return [-col, -row];
+    }
+    throw new Error(`${orientation} is not a valid orientation`);
+}
+
+function mod(n: number, m: number) {
+    return ((n % m) + m) % m;
 }
 
 function PieceSelector() {
     const pieceCanvasRefs: React.MutableRefObject<React.MutableRefObject<HTMLCanvasElement>[]> = React.useRef([]);
     pieceCanvasRefs.current = Object.entries(allPieces).map(([i, ]) => pieceCanvasRefs.current[parseInt(i)] ?? createRef());
+    
+    const { globalState, updateGlobalState } = useContext(MutableStateContext);
 
     useEffect(() => {
-        Object.entries(allPieces).forEach(([i, piece]) => {
-            const canvas = pieceCanvasRefs.current[parseInt(i)].current;
+        globalState.gameState!.piecesRemaining.forEach(({pieceId, orientation}) => {
+            const canvas = pieceCanvasRefs.current[pieceId].current;
             const context = canvas.getContext('2d');
             let animationFrameId: number | null = null;
 
             const render = () => {
                 // draw piece
-                drawPiece(piece, context!);
+                drawPiece(allPieces[pieceId], orientation, context!, globalState.gameState!.color);
 
                 animationFrameId = window.requestAnimationFrame(render);
             }
@@ -136,20 +171,65 @@ function PieceSelector() {
                 window.cancelAnimationFrame(animationFrameId!);
             }
         });
-    }, []);
+    }, [globalState.gameState]);
+
+    const setSelectedPiece = (pieceIndex: number) => () => updateGlobalState((globalState: GlobalState) => ({
+        screen: globalState.screen,
+        gameState: {
+            board: globalState.gameState!.board,
+            turn: globalState.gameState!.turn,
+            color: globalState.gameState!.color,
+            piecesRemaining: globalState.gameState!.piecesRemaining,
+            selectedPiece: pieceIndex,
+            winners: globalState.gameState!.winners
+        }
+    }));
+
+    const updatePieceOrientation = (pieceIndex: number, update: (prevOrientation: number) => number) => () => updateGlobalState((globalState: GlobalState) => ({
+        screen: globalState.screen,
+        gameState: {
+            board: globalState.gameState!.board,
+            turn: globalState.gameState!.turn,
+            color: globalState.gameState!.color,
+            piecesRemaining: globalState.gameState!.piecesRemaining.map(orientedPiece => orientedPiece.pieceId === pieceIndex ? {
+                pieceId: pieceIndex,
+                orientation: update(orientedPiece.orientation)
+            } : orientedPiece),
+            selectedPiece: globalState.gameState!.selectedPiece,
+            winners: globalState.gameState!.winners
+        }
+    }));
 
     return (
         <div style={{float: "left"}}>
             {
-                Object.entries(allPieces).map(([i, ]) => (
-                    <Card style={{position: "relative", float: "left", border: "1px solid black"}} className="m-1">
+                globalState.gameState!.piecesRemaining.map(({pieceId}) => (
+                    <Card style={{position: "relative", float: "left", cursor: "pointer"}} className="m-1">
                         <div>
-                            <button className="small">↔</button>
-                            <button className="small">↕</button>
-                            <button className="small">↻</button>
-                            <button className="small">↺</button>
+                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => mod(prevOrientation + 4, 8))}>↔</button>
+                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => {
+                                if (prevOrientation < 4) {
+                                    return mod(prevOrientation + 6, 8);
+                                }
+                                return mod(prevOrientation - 2, 4);
+                            })}>↕</button>
+                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => {
+                                if (prevOrientation < 4) {
+                                    return mod((prevOrientation - 1), 4);
+                                }
+                                return mod((prevOrientation - 5), 4) + 4;
+                            })}>↻</button>
+                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => {
+                                if (prevOrientation < 4) {
+                                    return mod((prevOrientation + 1), 4);
+                                }
+                                return mod((prevOrientation - 3), 4) + 4;
+                            })}>↺</button>
                         </div>
-                        <canvas ref={pieceCanvasRefs.current[parseInt(i)]} width={TILE_CANVAS_WIDTH_PX} height={TILE_CANVAS_WIDTH_PX}/>
+                        <canvas className={globalState.gameState!.selectedPiece === pieceId ? "selectedPieceCard" : "pieceCard"}
+                                onClick={setSelectedPiece(pieceId)}
+                                ref={pieceCanvasRefs.current[pieceId]}
+                                width={TILE_CANVAS_WIDTH_PX} height={TILE_CANVAS_WIDTH_PX}/>
                     </Card>
                 ))
             }

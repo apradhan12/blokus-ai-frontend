@@ -4,6 +4,7 @@ import './App.css';
 import {GameView} from "./GameView";
 import {GlobalState, NullablePlayerColor, PlayerColor, Screen, MutableStateContext} from "./State";
 import {BOARD_HEIGHT, BOARD_WIDTH} from "./constants";
+import {allPieces} from "./Pieces";
 
 function getInitialBoard() {
     const board: NullablePlayerColor[][] = [];
@@ -59,8 +60,7 @@ function ColorChooser() {
                 board: getInitialBoard(),
                 turn: PlayerColor.Orange,
                 color: color,
-                piecesRemaining: [],
-                currentPieceOrientations: [],
+                piecesRemaining: Object.entries(allPieces).map(([i, ]) => ({pieceId: parseInt(i), orientation: 0})),
                 selectedPiece: null,
                 winners: null
             }

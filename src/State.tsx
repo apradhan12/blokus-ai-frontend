@@ -13,12 +13,16 @@ export enum Screen {
 
 export type NullablePlayerColor = PlayerColor | null;
 
+export interface OrientedPiece {
+    pieceId: number;
+    orientation: number;
+}
+
 export interface GameState {
     board: NullablePlayerColor[][];
     turn: NullablePlayerColor;
     color: PlayerColor;
-    piecesRemaining: number[];
-    currentPieceOrientations: number[];
+    piecesRemaining: OrientedPiece[];
     selectedPiece: number | null;
     winners: number[] | null;
 }

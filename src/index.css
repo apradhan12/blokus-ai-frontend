@@ -5,3 +5,22 @@ button.small {
     height: 25px;
     float: left;
 }
+
+.pieceCard {
+    border: 1px solid #000000;
+}
+
+.pieceCard:hover {
+    border: 1px solid #0062cc;
+    box-shadow: 0 0 6px rgb(35 173 255);
+}
+
+.pieceCard:active {
+    border: 1px solid #0062cc;
+    box-shadow: 0 0 6px rgb(35 173 255);
+}
+
+.selectedPieceCard {
+    border: 1px solid #0062cc;
+    box-shadow: 0 0 6px rgb(35 173 255);
+}
