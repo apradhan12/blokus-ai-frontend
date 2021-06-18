@@ -1,7 +1,7 @@
 import React, {createRef, useContext, useEffect, useRef, useState} from "react";
 import {GlobalState, MutableStateContext, PlayerColor} from "./State";
 import {BOARD_HEIGHT, BOARD_PADDING_PX, BOARD_WIDTH, CELL_WIDTH_PX, OFFSET_PX} from "./constants";
-import {allPieces} from "./Pieces";
+import {allPieces, applyOrientation} from "./Pieces";
 import {Card, Col, Row} from "react-bootstrap";
 
 const CANVAS_BORDER_WIDTH_PX = 1;
@@ -74,6 +74,12 @@ function pieceTilesToPixels(row: number, col: number): [number, number] {
     return [(col - 0.5) * PIECE_TILE_WIDTH_PX + TILE_CANVAS_WIDTH_PX / 2, (row - 0.5) * PIECE_TILE_WIDTH_PX + TILE_CANVAS_WIDTH_PX / 2];
 }
 
+function mouseEventToCoords(e: React.MouseEvent<HTMLElement>): [number, number] {
+    const target = e.target! as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    return [e.clientX - rect.left, e.clientY - rect.top];
+}
+
 export function GameView() {
 
     const canvasRef: React.MutableRefObject<HTMLCanvasElement | null> = useRef(null);
@@ -92,15 +98,15 @@ export function GameView() {
     }, [globalState, mousePosition]);
 
     const updateMousePosition: React.MouseEventHandler<HTMLCanvasElement> = (e) => {
-        const target = e.target! as HTMLCanvasElement;
-        const rect = target.getBoundingClientRect();
-        const x = e.clientX - rect.left; //x position within the element.
-        const y = e.clientY - rect.top;  //y position within the element.
-        setMousePosition([x, y]);
+        setMousePosition(mouseEventToCoords(e));
     }
 
     const clearMousePosition: React.MouseEventHandler<HTMLCanvasElement> = () => {
         setMousePosition(null);
+    }
+
+    const placeTile: React.MouseEventHandler<HTMLCanvasElement> = () => {
+
     }
 
     return (
@@ -112,7 +118,10 @@ export function GameView() {
                     <span>It's {globalState.gameState!.turn}'s turn. Please wait for them to make a move.</span>
                 }
                 <br/>
-                <canvas ref={canvasRef} width={CELL_WIDTH_PX * BOARD_WIDTH + 1} height={CELL_WIDTH_PX * BOARD_HEIGHT + 1} onMouseMove={updateMousePosition} onMouseOut={clearMousePosition}/>
+                <canvas ref={canvasRef} width={CELL_WIDTH_PX * BOARD_WIDTH + 1} height={CELL_WIDTH_PX * BOARD_HEIGHT + 1}
+                        onMouseMove={updateMousePosition} onMouseOut={clearMousePosition}
+                        onClick={placeTile}
+                />
             </Col>
             {
                 globalState.gameState!.turn === globalState.gameState!.color && <Col><PieceSelector/></Col>
@@ -151,30 +160,29 @@ function drawPiece(piece: [number, number][], orientation: number, ctx: CanvasRe
     }
 }
 
-function applyOrientation(row: number, col: number, orientation: number): [number, number] {
-    switch (orientation) {
-        case 0:
-            return [row, col];
-        case 1:
-            return [-col, row];
-        case 2:
-            return [-row, -col];
-        case 3:
-            return [col, -row];
-        case 4:
-            return [row, -col];
-        case 5:
-            return [col, row];
-        case 6:
-            return [-row, col];
-        case 7:
-            return [-col, -row];
-    }
-    throw new Error(`${orientation} is not a valid orientation`);
-}
-
 function mod(n: number, m: number) {
     return ((n % m) + m) % m;
+}
+
+function flip(orientation: number, flipPairs: [number, number][]) {
+    const matchingRow = flipPairs.find((row: [number, number]) => row.includes(orientation))!;
+    return orientation === matchingRow[0] ? matchingRow[1] : matchingRow[0];
+}
+
+function horizontalFlip(orientation: number) {
+    const horizontalFlipPairs: [number, number][] = [[0, 4],
+        [1, 7],
+        [2, 6],
+        [3, 5]];
+    return flip(orientation, horizontalFlipPairs);
+}
+
+function verticalFlip(orientation: number) {
+    const verticalFlipPairs: [number, number][] = [[0, 6],
+        [1, 5],
+        [2, 4],
+        [3, 7]];
+    return flip(orientation, verticalFlipPairs);
 }
 
 function PieceSelector() {
@@ -207,6 +215,7 @@ function PieceSelector() {
     const setSelectedPiece = (pieceIndex: number) => () => updateGlobalState((globalState: GlobalState) => ({
         screen: globalState.screen,
         gameState: {
+            webSocket: globalState.gameState!.webSocket,
             board: globalState.gameState!.board,
             turn: globalState.gameState!.turn,
             color: globalState.gameState!.color,
@@ -219,6 +228,7 @@ function PieceSelector() {
     const updatePieceOrientation = (pieceIndex: number, update: (prevOrientation: number) => number) => () => updateGlobalState((globalState: GlobalState) => ({
         screen: globalState.screen,
         gameState: {
+            webSocket: globalState.gameState!.webSocket,
             board: globalState.gameState!.board,
             turn: globalState.gameState!.turn,
             color: globalState.gameState!.color,
@@ -235,15 +245,10 @@ function PieceSelector() {
         <div style={{float: "left"}}>
             {
                 globalState.gameState!.piecesRemaining.map(({pieceId}) => (
-                    <Card style={{position: "relative", float: "left", cursor: "pointer"}} className="m-1">
+                    <Card style={{position: "relative", float: "left", cursor: "pointer"}} className="m-1" key={pieceId}>
                         <div>
-                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => mod(prevOrientation + 4, 8))}>↔</button>
-                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => {
-                                if (prevOrientation < 4) {
-                                    return mod(prevOrientation + 6, 8);
-                                }
-                                return mod(prevOrientation - 2, 4);
-                            })}>↕</button>
+                            <button className="small" onClick={updatePieceOrientation(pieceId, horizontalFlip)}>↔</button>
+                            <button className="small" onClick={updatePieceOrientation(pieceId, verticalFlip)}>↕</button>
                             <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => {
                                 if (prevOrientation < 4) {
                                     return mod((prevOrientation - 1), 4);

@@ -82,8 +82,8 @@ function getPieceCoords(lines: string[]): [number, number][] {
     return otherCoords.map((coordPair: [number, number]) => [coordPair[0] - centerCoords![0], coordPair[1] - centerCoords![1]]);
 }
 
-export function readPieces() {
-    const splitPieces = PIECES.split("\n\n");
+export function readPieces(pieces: string) {
+    const splitPieces = pieces.split("\n\n");
     const allPieceCoords = [];
     for (const piece of splitPieces) {
         allPieceCoords.push(getPieceCoords(piece.split("\n")));
@@ -91,4 +91,26 @@ export function readPieces() {
     return allPieceCoords;
 }
 
-export const allPieces = readPieces();
+export function applyOrientation(row: number, col: number, orientation: number): [number, number] {
+    switch (orientation) {
+        case 0:
+            return [row, col];
+        case 1:
+            return [-col, row];
+        case 2:
+            return [-row, -col];
+        case 3:
+            return [col, -row];
+        case 4:
+            return [row, -col];
+        case 5:
+            return [col, row];
+        case 6:
+            return [-row, col];
+        case 7:
+            return [-col, -row];
+    }
+    throw new Error(`${orientation} is not a valid orientation`);
+}
+
+export const allPieces = readPieces(PIECES);
