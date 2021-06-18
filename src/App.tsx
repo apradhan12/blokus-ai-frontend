@@ -3,7 +3,7 @@ import {Button, Col, Container, Row} from 'react-bootstrap';
 import './App.css';
 import {GameView} from "./GameView";
 import {GlobalState, NullablePlayerColor, PlayerColor, Screen, MutableStateContext} from "./State";
-import {BOARD_HEIGHT, BOARD_WIDTH} from "./constants";
+import {BOARD_HEIGHT, BOARD_WIDTH, WEBSOCKET_URL} from "./constants";
 import {allPieces} from "./Pieces";
 
 function getInitialBoard() {
@@ -53,18 +53,23 @@ function App() {
 
 function ColorChooser() {
     function selectColor(color: PlayerColor, updateGlobalState: (globalStateUpdater: (globalState: GlobalState) => GlobalState) => void) {
-        // initializes the game state
-        updateGlobalState((_: GlobalState) => ({
-            screen: Screen.InGame,
-            gameState: {
-                board: getInitialBoard(),
-                turn: PlayerColor.Orange,
-                color: color,
-                piecesRemaining: Object.entries(allPieces).map(([i, ]) => ({pieceId: parseInt(i), orientation: 0})),
-                selectedPiece: null,
-                winners: null
-            }
-        }));
+        const webSocket = new WebSocket(WEBSOCKET_URL);
+
+        webSocket.onopen = () => {
+            // initializes the game state
+            updateGlobalState((_: GlobalState) => ({
+                screen: Screen.InGame,
+                gameState: {
+                    webSocket: webSocket,
+                    board: getInitialBoard(),
+                    turn: PlayerColor.Orange,
+                    color: color,
+                    piecesRemaining: Object.entries(allPieces).map(([i, ]) => ({pieceId: parseInt(i), orientation: 0})),
+                    selectedPiece: null,
+                    winners: null
+                }
+            }));
+        }
     }
 
     return (

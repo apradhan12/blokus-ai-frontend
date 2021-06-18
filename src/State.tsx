@@ -19,6 +19,7 @@ export interface OrientedPiece {
 }
 
 export interface GameState {
+    webSocket: WebSocket;
     board: NullablePlayerColor[][];
     turn: NullablePlayerColor;
     color: PlayerColor;
