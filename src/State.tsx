@@ -1,4 +1,5 @@
 import React from "react";
+import {WebSocketController} from "./WebSocketController";
 
 export enum PlayerColor {
     Orange = "orange",
@@ -19,7 +20,7 @@ export interface OrientedPiece {
 }
 
 export interface GameState {
-    webSocket: WebSocket;
+    webSocketController: WebSocketController;
     board: NullablePlayerColor[][];
     turn: NullablePlayerColor;
     color: PlayerColor;

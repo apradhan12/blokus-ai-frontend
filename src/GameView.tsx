@@ -99,15 +99,15 @@ export function GameView() {
 
     const updateMousePosition: React.MouseEventHandler<HTMLCanvasElement> = (e) => {
         setMousePosition(mouseEventToCoords(e));
-    }
+    };
 
     const clearMousePosition: React.MouseEventHandler<HTMLCanvasElement> = () => {
         setMousePosition(null);
-    }
+    };
 
     const placeTile: React.MouseEventHandler<HTMLCanvasElement> = () => {
 
-    }
+    };
 
     return (
         <Row>
@@ -215,7 +215,7 @@ function PieceSelector() {
     const setSelectedPiece = (pieceIndex: number) => () => updateGlobalState((globalState: GlobalState) => ({
         screen: globalState.screen,
         gameState: {
-            webSocket: globalState.gameState!.webSocket,
+            webSocketController: globalState.gameState!.webSocketController,
             board: globalState.gameState!.board,
             turn: globalState.gameState!.turn,
             color: globalState.gameState!.color,
@@ -228,7 +228,7 @@ function PieceSelector() {
     const updatePieceOrientation = (pieceIndex: number, update: (prevOrientation: number) => number) => () => updateGlobalState((globalState: GlobalState) => ({
         screen: globalState.screen,
         gameState: {
-            webSocket: globalState.gameState!.webSocket,
+            webSocketController: globalState.gameState!.webSocketController,
             board: globalState.gameState!.board,
             turn: globalState.gameState!.turn,
             color: globalState.gameState!.color,

@@ -5,6 +5,7 @@ import {GameView} from "./GameView";
 import {GlobalState, NullablePlayerColor, PlayerColor, Screen, MutableStateContext} from "./State";
 import {BOARD_HEIGHT, BOARD_WIDTH, WEBSOCKET_URL} from "./constants";
 import {allPieces} from "./Pieces";
+import {WebSocketController} from "./WebSocketController";
 
 function getInitialBoard() {
     const board: NullablePlayerColor[][] = [];
@@ -53,14 +54,12 @@ function App() {
 
 function ColorChooser() {
     function selectColor(color: PlayerColor, updateGlobalState: (globalStateUpdater: (globalState: GlobalState) => GlobalState) => void) {
-        const webSocket = new WebSocket(WEBSOCKET_URL);
-
-        webSocket.onopen = () => {
+        const webSocketController = new WebSocketController(WEBSOCKET_URL, () => {
             // initializes the game state
             updateGlobalState((_: GlobalState) => ({
                 screen: Screen.InGame,
                 gameState: {
-                    webSocket: webSocket,
+                    webSocketController: webSocketController,
                     board: getInitialBoard(),
                     turn: PlayerColor.Orange,
                     color: color,
@@ -69,7 +68,8 @@ function ColorChooser() {
                     winners: null
                 }
             }));
-        }
+            webSocketController.startAIGame(color);
+        });
     }
 
     return (
