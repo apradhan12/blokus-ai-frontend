@@ -54,7 +54,7 @@ function App() {
 
 function ColorChooser() {
     function selectColor(color: PlayerColor, updateGlobalState: (globalStateUpdater: (globalState: GlobalState) => GlobalState) => void) {
-        const webSocketController = new WebSocketController(WEBSOCKET_URL, () => {
+        const webSocketController = new WebSocketController(WEBSOCKET_URL, updateGlobalState, () => {
             // initializes the game state
             updateGlobalState((_: GlobalState) => ({
                 screen: Screen.InGame,

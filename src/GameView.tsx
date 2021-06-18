@@ -1,5 +1,5 @@
 import React, {createRef, useContext, useEffect, useRef, useState} from "react";
-import {GlobalState, MutableStateContext, PlayerColor} from "./State";
+import {GlobalState, MutableStateContext, OrientedPiece, PlayerColor} from "./State";
 import {BOARD_HEIGHT, BOARD_PADDING_PX, BOARD_WIDTH, CELL_WIDTH_PX, OFFSET_PX} from "./constants";
 import {allPieces, applyOrientation} from "./Pieces";
 import {Card, Col, Row} from "react-bootstrap";
@@ -7,6 +7,15 @@ import {Card, Col, Row} from "react-bootstrap";
 const CANVAS_BORDER_WIDTH_PX = 1;
 const TILE_CANVAS_WIDTH_PX = 100 - CANVAS_BORDER_WIDTH_PX * 2;
 const PIECE_TILE_WIDTH_PX = 15;
+
+function getSelectedPieceOrientation(globalState: GlobalState) {
+    const selectedOrientedPiece = globalState.gameState!.piecesRemaining.find((piece: OrientedPiece) => piece.pieceId === globalState.gameState!.selectedPiece);
+    return selectedOrientedPiece!.orientation;
+}
+
+function pixelsToCells(x: number, y: number): [number, number] {
+    return [Math.round((y - 0.5 * CELL_WIDTH_PX) / CELL_WIDTH_PX), Math.round((x - 0.5 * CELL_WIDTH_PX) / CELL_WIDTH_PX)];
+}
 
 function draw(globalState: GlobalState, ctx: CanvasRenderingContext2D, mousePosition: [number, number] | null) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -21,16 +30,11 @@ function draw(globalState: GlobalState, ctx: CanvasRenderingContext2D, mousePosi
         }
     }
 
-    function pixelsToCells(x: number, y: number) {
-        return [Math.round((y - 0.5 * CELL_WIDTH_PX) / CELL_WIDTH_PX), Math.round((x - 0.5 * CELL_WIDTH_PX) / CELL_WIDTH_PX)];
-    }
-
     // draw selected tile
     if (mousePosition !== null && globalState.gameState!.selectedPiece !== null) {
         const centerPosition = pixelsToCells(mousePosition[0], mousePosition[1]);
-        const selectedOrientedPiece = globalState.gameState!.piecesRemaining.find(piece => piece.pieceId === globalState.gameState!.selectedPiece);
 
-        drawPiece(allPieces[globalState.gameState!.selectedPiece], selectedOrientedPiece!.orientation, ctx,
+        drawPiece(allPieces[globalState.gameState!.selectedPiece], getSelectedPieceOrientation(globalState), ctx,
             globalState.gameState!.color, cellsToPixels, CELL_WIDTH_PX, centerPosition, true);
     }
 
@@ -105,8 +109,11 @@ export function GameView() {
         setMousePosition(null);
     };
 
-    const placeTile: React.MouseEventHandler<HTMLCanvasElement> = () => {
-
+    const attemptMove: React.MouseEventHandler<HTMLCanvasElement> = () => {
+        const gameState = globalState.gameState!;
+        if (gameState.selectedPiece !== null && mousePosition !== null) {
+            gameState.webSocketController.attemptMove(gameState.selectedPiece, getSelectedPieceOrientation(globalState), pixelsToCells(mousePosition[0], mousePosition[1]));
+        }
     };
 
     return (
@@ -120,7 +127,7 @@ export function GameView() {
                 <br/>
                 <canvas ref={canvasRef} width={CELL_WIDTH_PX * BOARD_WIDTH + 1} height={CELL_WIDTH_PX * BOARD_HEIGHT + 1}
                         onMouseMove={updateMousePosition} onMouseOut={clearMousePosition}
-                        onClick={placeTile}
+                        onClick={attemptMove}
                 />
             </Col>
             {
