@@ -1,6 +1,13 @@
 import React, {createRef, useContext, useEffect, useRef, useState} from "react";
 import {GlobalState, MutableStateContext, OrientedPiece, PlayerColor} from "./State";
-import {BOARD_HEIGHT, BOARD_PADDING_PX, BOARD_WIDTH, CELL_WIDTH_PX, OFFSET_PX} from "./constants";
+import {
+    BOARD_HEIGHT,
+    BOARD_PADDING_PX,
+    BOARD_WIDTH,
+    CELL_WIDTH_PX,
+    OFFSET_PX,
+    STARTING_POINT_LOCATIONS
+} from "./constants";
 import {allPieces, applyOrientation} from "./Pieces";
 import {Card, Col, Row} from "react-bootstrap";
 
@@ -13,12 +20,27 @@ function getSelectedPieceOrientation(globalState: GlobalState) {
     return selectedOrientedPiece!.orientation;
 }
 
+/**
+ * Returns the [x, y] coordinates of the top-left corner of a cell in pixels.
+ */
+function cellsToPixels(row: number, col: number): [number, number] {
+    return [OFFSET_PX + col * CELL_WIDTH_PX + BOARD_PADDING_PX, OFFSET_PX + row * CELL_WIDTH_PX + BOARD_PADDING_PX];
+}
+
 function pixelsToCells(x: number, y: number): [number, number] {
     return [Math.round((y - 0.5 * CELL_WIDTH_PX) / CELL_WIDTH_PX), Math.round((x - 0.5 * CELL_WIDTH_PX) / CELL_WIDTH_PX)];
 }
 
 function draw(globalState: GlobalState, ctx: CanvasRenderingContext2D, mousePosition: [number, number] | null) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    for (const [row, col] of STARTING_POINT_LOCATIONS) {
+        ctx.beginPath();
+        const [x, y] = cellsToPixels(row + 0.5, col + 0.5);
+        ctx.arc(x, y, CELL_WIDTH_PX * 0.15, 0, 2 * Math.PI, false);
+        ctx.fillStyle = "#cccccc"
+        ctx.fill();
+    }
 
     // draw placed tiles
     for (let row = 0; row < BOARD_HEIGHT; row++) {
@@ -65,13 +87,6 @@ function drawSquare(ctx: CanvasRenderingContext2D, row: number, col: number, col
     const topLeft = cellsToPixels(row, col);
     ctx.rect(topLeft[0], topLeft[1], CELL_WIDTH_PX, CELL_WIDTH_PX);
     ctx.fill();
-}
-
-/**
- * Returns the [x, y] coordinates of the top-left corner of a cell in pixels.
- */
-function cellsToPixels(row: number, col: number): [number, number] {
-    return [OFFSET_PX + col * CELL_WIDTH_PX + BOARD_PADDING_PX, OFFSET_PX + row * CELL_WIDTH_PX + BOARD_PADDING_PX];
 }
 
 function pieceTilesToPixels(row: number, col: number): [number, number] {
