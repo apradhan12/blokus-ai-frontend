@@ -12,7 +12,7 @@ export class WebSocketController {
                 onOpenCallback();
             }
         };
-        this.webSocket.onmessage = this.handleMessage;
+        this.webSocket.onmessage = (e) => this.handleMessage.bind(this)(e);
     }
 
     send(object: any) {
@@ -22,7 +22,7 @@ export class WebSocketController {
     startAIGame(playerColor: PlayerColor) {
         this.send({
             message: "startAIGame",
-            color: playerColor
+            color: playerColor === PlayerColor.Orange ? 0 : 1
         });
     }
 
@@ -37,6 +37,7 @@ export class WebSocketController {
 
     handleMessage(event: MessageEvent) {
         const object = JSON.parse(event.data);
+        console.log(event.data);
         switch (object.message) {
             case "opponentMove":
                 this.handleOpponentMove(object);
@@ -82,12 +83,14 @@ export class WebSocketController {
 }
 
 interface OpponentMove {
+    message: string;
     pieceId: number;
     board: number[][];
     winners: number[];
 }
 
 interface PlayerMoveResponse {
+    message: string;
     isMoveValid: boolean;
     pieceId: number;
     board: number[][];
