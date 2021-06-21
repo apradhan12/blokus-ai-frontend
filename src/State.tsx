@@ -6,6 +6,10 @@ export enum PlayerColor {
     Blue = "blue"
 }
 
+export function playerColorToNumber(color: PlayerColor) {
+    return color === PlayerColor.Orange ? 0 : 1;
+}
+
 export enum Screen {
     Lobby,
     SelectColor,
@@ -22,7 +26,7 @@ export interface OrientedPiece {
 export interface GameState {
     webSocketController: WebSocketController;
     board: NullablePlayerColor[][];
-    turn: NullablePlayerColor;
+    turn: PlayerColor;
     color: PlayerColor;
     piecesRemaining: OrientedPiece[];
     selectedPiece: number | null;

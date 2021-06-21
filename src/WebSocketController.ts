@@ -1,4 +1,5 @@
-import {GlobalState, GlobalStateUpdater, PlayerColor} from "./State";
+import {GlobalState, GlobalStateUpdater, PlayerColor, playerColorToNumber} from "./State";
+import {COLOR_LIST} from "./constants";
 
 export class WebSocketController {
     private readonly webSocket: WebSocket;
@@ -22,7 +23,7 @@ export class WebSocketController {
     startAIGame(playerColor: PlayerColor) {
         this.send({
             message: "startAIGame",
-            color: playerColor === PlayerColor.Orange ? 0 : 1
+            color: playerColorToNumber(playerColor)
         });
     }
 
@@ -54,7 +55,8 @@ export class WebSocketController {
             gameState: {
                 webSocketController: prevGlobalState.gameState!.webSocketController,
                 board: translateBoard(move.board),
-                turn: prevGlobalState.gameState!.turn === PlayerColor.Orange ? PlayerColor.Blue : PlayerColor.Orange,
+                // todo: switch turn to number?
+                turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + move.turnIncrement) % 2],
                 color: prevGlobalState.gameState!.color,
                 piecesRemaining: prevGlobalState.gameState!.piecesRemaining,
                 selectedPiece: prevGlobalState.gameState!.selectedPiece,
@@ -70,7 +72,8 @@ export class WebSocketController {
                 gameState: {
                     webSocketController: prevGlobalState.gameState!.webSocketController,
                     board: translateBoard(response.board),
-                    turn: prevGlobalState.gameState!.turn === PlayerColor.Orange ? PlayerColor.Blue : PlayerColor.Orange,
+                    // todo: factor out common code
+                    turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + response.turnIncrement) % 2],
                     color: prevGlobalState.gameState!.color,
                     piecesRemaining: prevGlobalState.gameState!.piecesRemaining.filter(orientedPiece => orientedPiece.pieceId !== response.pieceId),
                     selectedPiece: prevGlobalState.gameState!.selectedPiece === response.pieceId ? null : prevGlobalState.gameState!.selectedPiece,
@@ -87,6 +90,7 @@ interface OpponentMove {
     pieceId: number;
     board: number[][];
     winners: number[];
+    turnIncrement: number;
 }
 
 interface PlayerMoveResponse {
@@ -95,6 +99,7 @@ interface PlayerMoveResponse {
     pieceId: number;
     board: number[][];
     winners: number[];
+    turnIncrement: number;
 }
 
 function translateBoard(board: number[][]) {
