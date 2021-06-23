@@ -1,5 +1,5 @@
 import React, {createRef, useContext, useEffect, useRef, useState} from "react";
-import {GlobalState, MutableStateContext, OrientedPiece, PlayerColor} from "./State";
+import {GlobalState, MutableStateContext, OrientedPiece, PlayerColor, playerColorToNumber} from "./State";
 import {
     BOARD_HEIGHT,
     BOARD_PADDING_PX,
@@ -131,13 +131,22 @@ export function GameView() {
         }
     };
 
+    const getWinnerDisplay = (winners: number[]) => {
+        if (winners.includes(playerColorToNumber(globalState.gameState!.color))) {
+            return (winners.length > 1) ? "The game was a tie." : "You won!";
+        }
+        return "You lost.";
+    };
+
     return (
         <Row>
             <Col>
                 You are playing as {globalState.gameState!.color}.<br/>
-                {globalState.gameState!.color === globalState.gameState!.turn ?
-                    <span>It's your turn. Select a piece from those shown on the right.</span> :
-                    <span>It's {globalState.gameState!.turn}'s turn. Please wait for them to make a move.</span>
+                {globalState.gameState!.winners !== null && globalState.gameState!.winners.length > 0 ? getWinnerDisplay(globalState.gameState!.winners) :
+                    (globalState.gameState!.color === globalState.gameState!.turn ?
+                            <span>It's your turn. Select a piece from those shown on the right.</span> :
+                            <span>It's {globalState.gameState!.turn}'s turn. Please wait for them to make a move.</span>
+                    )
                 }
                 <br/>
                 <canvas ref={canvasRef} width={CELL_WIDTH_PX * BOARD_WIDTH + 1} height={CELL_WIDTH_PX * BOARD_HEIGHT + 1}
