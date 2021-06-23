@@ -12,4 +12,4 @@ The frontend is written in TypeScript. React is used for state management and vi
 
 ## How to run
 
-First, run the backend server (see instructions at [https://github.com/apradhan12/blokus-ai-backend](https://github.com/apradhan12/blokus-ai-backend)). Then, run `yarn start` to start the app in development mode.
+First, run the backend server (see instructions at [https://github.com/apradhan12/blokus-ai-backend](https://github.com/apradhan12/blokus-ai-backend)). Then, run `yarn start` to start the app in development mode. You can then access the app at [http://localhost:3000](http://localhost:3000). Select a color and then you are ready to play.
