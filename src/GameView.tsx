@@ -42,6 +42,21 @@ function draw(globalState: GlobalState, ctx: CanvasRenderingContext2D, mousePosi
         ctx.fill();
     }
 
+    // print board
+    // console.log(globalState.gameState!.board.map(row => row.map(cell => {
+    //     switch (cell) {
+    //         case null:
+    //             return "_";
+    //         case PlayerColor.Orange:
+    //             return "O";
+    //         case PlayerColor.Blue:
+    //             return "B";
+    //     }
+    //     throw new Error();
+    // }).join("")).join("\n"));
+
+    // console.log(globalState.gameState!.piecesRemaining);
+
     // draw placed tiles
     for (let row = 0; row < BOARD_HEIGHT; row++) {
         for (let col = 0; col < BOARD_WIDTH; col++) {
