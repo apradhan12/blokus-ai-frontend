@@ -4,7 +4,7 @@ import {allPieces} from "./Pieces";
 
 function calculateScore(piecesRemaining: OrientedPiece[]) {
     if (piecesRemaining.length === 0) {
-        return 15; // todo: account for perfect 20
+        return 15;
     }
     return -1 * sum(piecesRemaining.map(piece => allPieces[piece.pieceId].length + 1));
 }
@@ -66,7 +66,6 @@ export class WebSocketController {
                 gameState: {
                     webSocketController: prevGlobalState.gameState!.webSocketController,
                     board: translateBoard(move.board),
-                    // todo: switch turn to number?
                     turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + move.turnIncrement) % 2],
                     color: prevGlobalState.gameState!.color,
                     scores: Array.from(Object.entries(COLOR_LIST))
@@ -89,7 +88,6 @@ export class WebSocketController {
                     gameState: {
                         webSocketController: prevGlobalState.gameState!.webSocketController,
                         board: translateBoard(response.board),
-                        // todo: factor out common code
                         turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + response.turnIncrement) % 2],
                         color: prevGlobalState.gameState!.color,
                         scores: Array.from(Object.entries(COLOR_LIST))
@@ -102,7 +100,6 @@ export class WebSocketController {
                 };
             });
         }
-        // TODO: tell you if you made an invalid move - for now we just do nothing
     }
 }
 

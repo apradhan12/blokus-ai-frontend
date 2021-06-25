@@ -195,7 +195,6 @@ export function GameView() {
                 {/*    cardClass="m-1 readonlyPieceCard"*/}
                 {/*    canvasClassName={() => "readonlyPieceCanvas"}*/}
                 {/*/>*/}
-                {/* TODO: fix refs in PieceSelector */}
                 <ReadonlyPieceDisplay/>
             </Col>
             <Col>
@@ -376,7 +375,6 @@ function PieceSelector(props: PieceDisplayProps) {
     );
 }
 
-// todo: remove this once the ref issue is fixed
 function ReadonlyPieceDisplay() {
     const pieceCanvasRefs: React.MutableRefObject<React.MutableRefObject<HTMLCanvasElement>[]> = React.useRef([]);
     pieceCanvasRefs.current = Object.entries(allPieces).map(([i, ]) => pieceCanvasRefs.current[parseInt(i)] ?? createRef());
