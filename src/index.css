@@ -6,21 +6,36 @@ button.small {
     float: left;
 }
 
+.readonlyPieceCard {
+    position: relative;
+    float: left;
+}
+
 .pieceCard {
+    position: relative;
+    float: left;
+    cursor: pointer;
+}
+
+.readonlyPieceCanvas {
     border: 1px solid #000000;
 }
 
-.pieceCard:hover {
+.pieceCanvas {
+    border: 1px solid #000000;
+}
+
+.pieceCanvas:hover {
     border: 1px solid #0062cc;
     box-shadow: 0 0 6px rgb(35 173 255);
 }
 
-.pieceCard:active {
+.pieceCanvas:active {
     border: 1px solid #0062cc;
     box-shadow: 0 0 6px rgb(35 173 255);
 }
 
-.selectedPieceCard {
+.selectedPieceCanvas {
     border: 1px solid #0062cc;
     box-shadow: 0 0 6px rgb(35 173 255);
 }

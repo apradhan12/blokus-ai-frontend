@@ -29,6 +29,7 @@ export interface GameState {
     turn: PlayerColor;
     color: PlayerColor;
     piecesRemaining: OrientedPiece[];
+    opponentPiecesRemaining: OrientedPiece[];
     selectedPiece: number | null;
     winners: number[] | null;
 }

@@ -1,10 +1,18 @@
 import React, {createRef, useContext, useEffect, useRef, useState} from "react";
-import {GlobalState, MutableStateContext, OrientedPiece, PlayerColor, playerColorToNumber} from "./State";
+import {
+    GlobalState,
+    GlobalStateUpdater,
+    MutableStateContext,
+    OrientedPiece,
+    PlayerColor,
+    playerColorToNumber
+} from "./State";
 import {
     BOARD_HEIGHT,
     BOARD_PADDING_PX,
     BOARD_WIDTH,
     CELL_WIDTH_PX,
+    COLOR_LIST,
     OFFSET_PX,
     STARTING_POINT_LOCATIONS
 } from "./constants";
@@ -153,8 +161,43 @@ export function GameView() {
         return "You lost.";
     };
 
+    const cardHeader = (pieceId: number, updateGlobalState: GlobalStateUpdater) => (
+        <div>
+            <button className="small" onClick={updatePieceOrientation(pieceId, updateGlobalState, horizontalFlip)}>↔
+            </button>
+            <button className="small" onClick={updatePieceOrientation(pieceId, updateGlobalState, verticalFlip)}>↕
+            </button>
+            <button className="small"
+                    onClick={updatePieceOrientation(pieceId, updateGlobalState, (prevOrientation: number) => {
+                        if (prevOrientation < 4) {
+                            return mod((prevOrientation - 1), 4);
+                        }
+                        return mod((prevOrientation - 5), 4) + 4;
+                    })}>↻
+            </button>
+            <button className="small"
+                    onClick={updatePieceOrientation(pieceId, updateGlobalState, (prevOrientation: number) => {
+                        if (prevOrientation < 4) {
+                            return mod((prevOrientation + 1), 4);
+                        }
+                        return mod((prevOrientation - 3), 4) + 4;
+                    })}>↺
+            </button>
+        </div>
+    );
+
     return (
         <Row>
+            <Col>
+                {/*<PieceSelector*/}
+                {/*    piecesRemaining={globalState.gameState!.opponentPiecesRemaining}*/}
+                {/*    pieceColor={COLOR_LIST[1 - playerColorToNumber(globalState.gameState!.color)]}*/}
+                {/*    cardClass="m-1 readonlyPieceCard"*/}
+                {/*    canvasClassName={() => "readonlyPieceCanvas"}*/}
+                {/*/>*/}
+                {/* TODO: fix refs in PieceSelector */}
+                <ReadonlyPieceDisplay/>
+            </Col>
             <Col>
                 You are playing as {globalState.gameState!.color}.<br/>
                 {globalState.gameState!.winners !== null && globalState.gameState!.winners.length > 0 ? getWinnerDisplay(globalState.gameState!.winners) :
@@ -169,9 +212,16 @@ export function GameView() {
                         onClick={attemptMove}
                 />
             </Col>
-            {
-                globalState.gameState!.turn === globalState.gameState!.color && <Col><PieceSelector/></Col>
-            }
+            <Col>
+                <PieceSelector
+                    piecesRemaining={globalState.gameState!.piecesRemaining}
+                    pieceColor={globalState.gameState!.color}
+                    cardHeader={cardHeader}
+                    cardClass="m-1 pieceCard"
+                    canvasClassName={(isSelectedPiece: boolean) => isSelectedPiece ? "selectedPieceCanvas" : "pieceCanvas"}
+                    canvasOnClick={setSelectedPiece}
+                />
+            </Col>
         </Row>
     );
 }
@@ -231,14 +281,57 @@ function verticalFlip(orientation: number) {
     return flip(orientation, verticalFlipPairs);
 }
 
-function PieceSelector() {
+const setSelectedPiece = (pieceIndex: number, updateGlobalState: GlobalStateUpdater) =>
+    () => updateGlobalState((globalState: GlobalState) => ({
+        screen: globalState.screen,
+        gameState: {
+            webSocketController: globalState.gameState!.webSocketController,
+            board: globalState.gameState!.board,
+            turn: globalState.gameState!.turn,
+            color: globalState.gameState!.color,
+            piecesRemaining: globalState.gameState!.piecesRemaining,
+            opponentPiecesRemaining: globalState.gameState!.opponentPiecesRemaining,
+            selectedPiece: pieceIndex,
+            winners: globalState.gameState!.winners
+        }
+    }));
+
+const updatePieceOrientation = (pieceIndex: number, updateGlobalState: GlobalStateUpdater, update: (prevOrientation: number) => number) =>
+    () => updateGlobalState((globalState: GlobalState) => ({
+        screen: globalState.screen,
+        gameState: {
+            webSocketController: globalState.gameState!.webSocketController,
+            board: globalState.gameState!.board,
+            turn: globalState.gameState!.turn,
+            color: globalState.gameState!.color,
+            piecesRemaining: globalState.gameState!.piecesRemaining.map(orientedPiece => orientedPiece.pieceId === pieceIndex ? {
+                pieceId: pieceIndex,
+                orientation: update(orientedPiece.orientation)
+            } : orientedPiece),
+            opponentPiecesRemaining: globalState.gameState!.opponentPiecesRemaining,
+            selectedPiece: globalState.gameState!.selectedPiece,
+            winners: globalState.gameState!.winners
+        }
+    }));
+
+interface PieceDisplayProps {
+    piecesRemaining: OrientedPiece[];
+    pieceColor: PlayerColor;
+    cardHeader?: (pieceId: number, updateGlobalState: GlobalStateUpdater) => React.ReactElement;
+    cardClass: string;
+    canvasClassName: (isSelectedPiece: boolean) => string;
+    canvasOnClick?: (pieceId: number, updateGlobalState: GlobalStateUpdater) => () => void;
+
+}
+
+function PieceSelector(props: PieceDisplayProps) {
     const pieceCanvasRefs: React.MutableRefObject<React.MutableRefObject<HTMLCanvasElement>[]> = React.useRef([]);
     pieceCanvasRefs.current = Object.entries(allPieces).map(([i, ]) => pieceCanvasRefs.current[parseInt(i)] ?? createRef());
     
     const { globalState, updateGlobalState } = useContext(MutableStateContext);
 
     useEffect(() => {
-        globalState.gameState!.piecesRemaining.forEach(({pieceId, orientation}) => {
+        props.piecesRemaining.forEach(({pieceId, orientation}) => {
             const canvas = pieceCanvasRefs.current[pieceId].current;
             const context = canvas.getContext('2d');
             let animationFrameId: number | null = null;
@@ -246,7 +339,56 @@ function PieceSelector() {
             const render = () => {
                 // draw piece
                 context!.clearRect(0, 0, context!.canvas.width, context!.canvas.height);
-                drawPiece(allPieces[pieceId], orientation, context!, globalState.gameState!.color, pieceTilesToPixels, PIECE_TILE_WIDTH_PX);
+                drawPiece(allPieces[pieceId], orientation, context!, props.pieceColor, pieceTilesToPixels, PIECE_TILE_WIDTH_PX);
+
+                animationFrameId = window.requestAnimationFrame(render);
+            }
+            render();
+
+            return () => {
+                window.cancelAnimationFrame(animationFrameId!);
+            }
+        });
+    }, [globalState.gameState, props.pieceColor, props.piecesRemaining]);
+
+    return (
+        <div style={{float: "left"}}>
+            {
+                globalState.gameState!.piecesRemaining.map(({pieceId}) => (
+                    <Card className={props.cardClass} key={pieceId}>
+                        { props.cardHeader && props.cardHeader(pieceId, updateGlobalState) }
+                        {props.canvasOnClick ? <canvas className={props.canvasClassName(globalState.gameState!.selectedPiece === pieceId)}
+                                                       onClick={props.canvasOnClick(pieceId, updateGlobalState)}
+                                                       ref={pieceCanvasRefs.current[pieceId]}
+                                                       width={TILE_CANVAS_WIDTH_PX} height={TILE_CANVAS_WIDTH_PX}/> :
+                            <canvas className={props.canvasClassName(globalState.gameState!.selectedPiece === pieceId)}
+                                    ref={pieceCanvasRefs.current[pieceId]}
+                                    width={TILE_CANVAS_WIDTH_PX} height={TILE_CANVAS_WIDTH_PX}/>}
+
+                    </Card>
+                ))
+            }
+        </div>
+    );
+}
+
+// todo: remove this once the ref issue is fixed
+function ReadonlyPieceDisplay() {
+    const pieceCanvasRefs: React.MutableRefObject<React.MutableRefObject<HTMLCanvasElement>[]> = React.useRef([]);
+    pieceCanvasRefs.current = Object.entries(allPieces).map(([i, ]) => pieceCanvasRefs.current[parseInt(i)] ?? createRef());
+
+    const { globalState } = useContext(MutableStateContext);
+
+    useEffect(() => {
+        globalState.gameState!.opponentPiecesRemaining.forEach(({pieceId, orientation}) => {
+            const canvas = pieceCanvasRefs.current[pieceId].current;
+            const context = canvas.getContext('2d');
+            let animationFrameId: number | null = null;
+
+            const render = () => {
+                // draw piece
+                context!.clearRect(0, 0, context!.canvas.width, context!.canvas.height);
+                drawPiece(allPieces[pieceId], orientation, context!, COLOR_LIST[1 - playerColorToNumber(globalState.gameState!.color)], pieceTilesToPixels, PIECE_TILE_WIDTH_PX);
 
                 animationFrameId = window.requestAnimationFrame(render);
             }
@@ -258,58 +400,12 @@ function PieceSelector() {
         });
     }, [globalState.gameState]);
 
-    const setSelectedPiece = (pieceIndex: number) => () => updateGlobalState((globalState: GlobalState) => ({
-        screen: globalState.screen,
-        gameState: {
-            webSocketController: globalState.gameState!.webSocketController,
-            board: globalState.gameState!.board,
-            turn: globalState.gameState!.turn,
-            color: globalState.gameState!.color,
-            piecesRemaining: globalState.gameState!.piecesRemaining,
-            selectedPiece: pieceIndex,
-            winners: globalState.gameState!.winners
-        }
-    }));
-
-    const updatePieceOrientation = (pieceIndex: number, update: (prevOrientation: number) => number) => () => updateGlobalState((globalState: GlobalState) => ({
-        screen: globalState.screen,
-        gameState: {
-            webSocketController: globalState.gameState!.webSocketController,
-            board: globalState.gameState!.board,
-            turn: globalState.gameState!.turn,
-            color: globalState.gameState!.color,
-            piecesRemaining: globalState.gameState!.piecesRemaining.map(orientedPiece => orientedPiece.pieceId === pieceIndex ? {
-                pieceId: pieceIndex,
-                orientation: update(orientedPiece.orientation)
-            } : orientedPiece),
-            selectedPiece: globalState.gameState!.selectedPiece,
-            winners: globalState.gameState!.winners
-        }
-    }));
-
     return (
         <div style={{float: "left"}}>
             {
-                globalState.gameState!.piecesRemaining.map(({pieceId}) => (
-                    <Card style={{position: "relative", float: "left", cursor: "pointer"}} className="m-1" key={pieceId}>
-                        <div>
-                            <button className="small" onClick={updatePieceOrientation(pieceId, horizontalFlip)}>↔</button>
-                            <button className="small" onClick={updatePieceOrientation(pieceId, verticalFlip)}>↕</button>
-                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => {
-                                if (prevOrientation < 4) {
-                                    return mod((prevOrientation - 1), 4);
-                                }
-                                return mod((prevOrientation - 5), 4) + 4;
-                            })}>↻</button>
-                            <button className="small" onClick={updatePieceOrientation(pieceId, (prevOrientation: number) => {
-                                if (prevOrientation < 4) {
-                                    return mod((prevOrientation + 1), 4);
-                                }
-                                return mod((prevOrientation - 3), 4) + 4;
-                            })}>↺</button>
-                        </div>
-                        <canvas className={globalState.gameState!.selectedPiece === pieceId ? "selectedPieceCard" : "pieceCard"}
-                                onClick={setSelectedPiece(pieceId)}
+                globalState.gameState!.opponentPiecesRemaining.map(({pieceId}) => (
+                    <Card className="m-1 readonlyPieceCard" key={pieceId}>
+                        <canvas className="readonlyPieceCanvas"
                                 ref={pieceCanvasRefs.current[pieceId]}
                                 width={TILE_CANVAS_WIDTH_PX} height={TILE_CANVAS_WIDTH_PX}/>
                     </Card>

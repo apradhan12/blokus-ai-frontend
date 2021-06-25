@@ -114,3 +114,5 @@ export function applyOrientation(row: number, col: number, orientation: number):
 }
 
 export const allPieces = readPieces(PIECES);
+
+export const allOrientedPieces = Object.entries(allPieces).map(([i, ]) => ({pieceId: parseInt(i), orientation: 0}));

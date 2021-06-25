@@ -59,6 +59,7 @@ export class WebSocketController {
                 turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + move.turnIncrement) % 2],
                 color: prevGlobalState.gameState!.color,
                 piecesRemaining: prevGlobalState.gameState!.piecesRemaining,
+                opponentPiecesRemaining: prevGlobalState.gameState!.opponentPiecesRemaining.filter(orientedPiece => orientedPiece.pieceId !== move.pieceId),
                 selectedPiece: prevGlobalState.gameState!.selectedPiece,
                 winners: move.winners
             }
@@ -76,6 +77,7 @@ export class WebSocketController {
                     turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + response.turnIncrement) % 2],
                     color: prevGlobalState.gameState!.color,
                     piecesRemaining: prevGlobalState.gameState!.piecesRemaining.filter(orientedPiece => orientedPiece.pieceId !== response.pieceId),
+                    opponentPiecesRemaining: prevGlobalState.gameState!.opponentPiecesRemaining,
                     selectedPiece: prevGlobalState.gameState!.selectedPiece === response.pieceId ? null : prevGlobalState.gameState!.selectedPiece,
                     winners: response.winners
                 }

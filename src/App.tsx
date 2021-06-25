@@ -4,7 +4,7 @@ import './App.css';
 import {GameView} from "./GameView";
 import {GlobalState, NullablePlayerColor, PlayerColor, Screen, MutableStateContext} from "./State";
 import {BOARD_HEIGHT, BOARD_WIDTH, WEBSOCKET_URL} from "./constants";
-import {allPieces} from "./Pieces";
+import {allOrientedPieces} from "./Pieces";
 import {WebSocketController} from "./WebSocketController";
 
 function getInitialBoard() {
@@ -63,7 +63,8 @@ function ColorChooser() {
                     board: getInitialBoard(),
                     turn: PlayerColor.Orange,
                     color: color,
-                    piecesRemaining: Object.entries(allPieces).map(([i, ]) => ({pieceId: parseInt(i), orientation: 0})),
+                    piecesRemaining: allOrientedPieces,
+                    opponentPiecesRemaining: allOrientedPieces,
                     selectedPiece: null,
                     winners: null
                 }
