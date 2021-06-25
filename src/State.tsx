@@ -28,6 +28,7 @@ export interface GameState {
     board: NullablePlayerColor[][];
     turn: PlayerColor;
     color: PlayerColor;
+    scores: number[];
     piecesRemaining: OrientedPiece[];
     opponentPiecesRemaining: OrientedPiece[];
     selectedPiece: number | null;

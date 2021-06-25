@@ -1,3 +1,5 @@
+import {sum} from "./constants";
+
 const PIECES = `C
 
 CX
@@ -114,5 +116,7 @@ export function applyOrientation(row: number, col: number, orientation: number):
 }
 
 export const allPieces = readPieces(PIECES);
+
+export const initialScore = -1 * sum(allPieces.map(piece => piece.length + 1))
 
 export const allOrientedPieces = Object.entries(allPieces).map(([i, ]) => ({pieceId: parseInt(i), orientation: 0}));

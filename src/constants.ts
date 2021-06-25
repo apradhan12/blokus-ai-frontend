@@ -11,3 +11,7 @@ export const OFFSET_PX = 0.5;
 export const COLOR_LIST = [PlayerColor.Orange, PlayerColor.Blue];
 
 export const WEBSOCKET_URL = "ws://localhost:8080";
+
+export function sum(array: number[]) {
+    return array.reduce((a, b) => a + b, 0);
+}

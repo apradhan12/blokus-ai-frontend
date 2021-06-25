@@ -1,5 +1,13 @@
-import {GlobalState, GlobalStateUpdater, PlayerColor, playerColorToNumber} from "./State";
-import {COLOR_LIST} from "./constants";
+import {GlobalState, GlobalStateUpdater, OrientedPiece, PlayerColor, playerColorToNumber} from "./State";
+import {COLOR_LIST, sum} from "./constants";
+import {allPieces} from "./Pieces";
+
+function calculateScore(piecesRemaining: OrientedPiece[]) {
+    if (piecesRemaining.length === 0) {
+        return 15; // todo: account for perfect 20
+    }
+    return -1 * sum(piecesRemaining.map(piece => allPieces[piece.pieceId].length + 1));
+}
 
 export class WebSocketController {
     private readonly webSocket: WebSocket;
@@ -50,38 +58,49 @@ export class WebSocketController {
     }
 
     handleOpponentMove(move: OpponentMove) {
-        this.updateGlobalState((prevGlobalState: GlobalState) => ({
-            screen: prevGlobalState.screen,
-            gameState: {
-                webSocketController: prevGlobalState.gameState!.webSocketController,
-                board: translateBoard(move.board),
-                // todo: switch turn to number?
-                turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + move.turnIncrement) % 2],
-                color: prevGlobalState.gameState!.color,
-                piecesRemaining: prevGlobalState.gameState!.piecesRemaining,
-                opponentPiecesRemaining: prevGlobalState.gameState!.opponentPiecesRemaining.filter(orientedPiece => orientedPiece.pieceId !== move.pieceId),
-                selectedPiece: prevGlobalState.gameState!.selectedPiece,
-                winners: move.winners
+
+        this.updateGlobalState((prevGlobalState: GlobalState) => {
+            const opponentPiecesRemaining = prevGlobalState.gameState!.opponentPiecesRemaining.filter(orientedPiece => orientedPiece.pieceId !== move.pieceId);
+            return {
+                screen: prevGlobalState.screen,
+                gameState: {
+                    webSocketController: prevGlobalState.gameState!.webSocketController,
+                    board: translateBoard(move.board),
+                    // todo: switch turn to number?
+                    turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + move.turnIncrement) % 2],
+                    color: prevGlobalState.gameState!.color,
+                    scores: Array.from(Object.entries(COLOR_LIST))
+                        .map(([i, color]) => color === prevGlobalState.gameState!.color ? prevGlobalState.gameState!.scores[parseInt(i)] : calculateScore(opponentPiecesRemaining)),
+                    piecesRemaining: prevGlobalState.gameState!.piecesRemaining,
+                    opponentPiecesRemaining: opponentPiecesRemaining,
+                    selectedPiece: prevGlobalState.gameState!.selectedPiece,
+                    winners: move.winners
+                }
             }
-        }));
+        });
     }
 
     handlePlayerMoveResponse(response: PlayerMoveResponse) {
         if (response.isMoveValid) {
-            this.updateGlobalState((prevGlobalState: GlobalState) => ({
-                screen: prevGlobalState.screen,
-                gameState: {
-                    webSocketController: prevGlobalState.gameState!.webSocketController,
-                    board: translateBoard(response.board),
-                    // todo: factor out common code
-                    turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + response.turnIncrement) % 2],
-                    color: prevGlobalState.gameState!.color,
-                    piecesRemaining: prevGlobalState.gameState!.piecesRemaining.filter(orientedPiece => orientedPiece.pieceId !== response.pieceId),
-                    opponentPiecesRemaining: prevGlobalState.gameState!.opponentPiecesRemaining,
-                    selectedPiece: prevGlobalState.gameState!.selectedPiece === response.pieceId ? null : prevGlobalState.gameState!.selectedPiece,
-                    winners: response.winners
-                }
-            }));
+            this.updateGlobalState((prevGlobalState: GlobalState) => {
+                const piecesRemaining = prevGlobalState.gameState!.piecesRemaining.filter(orientedPiece => orientedPiece.pieceId !== response.pieceId);
+                return {
+                    screen: prevGlobalState.screen,
+                    gameState: {
+                        webSocketController: prevGlobalState.gameState!.webSocketController,
+                        board: translateBoard(response.board),
+                        // todo: factor out common code
+                        turn: COLOR_LIST[(playerColorToNumber(prevGlobalState.gameState!.turn) + response.turnIncrement) % 2],
+                        color: prevGlobalState.gameState!.color,
+                        scores: Array.from(Object.entries(COLOR_LIST))
+                            .map(([i, color]) => color === prevGlobalState.gameState!.color ? calculateScore(piecesRemaining) : prevGlobalState.gameState!.scores[parseInt(i)]),
+                        piecesRemaining: piecesRemaining,
+                        opponentPiecesRemaining: prevGlobalState.gameState!.opponentPiecesRemaining,
+                        selectedPiece: prevGlobalState.gameState!.selectedPiece === response.pieceId ? null : prevGlobalState.gameState!.selectedPiece,
+                        winners: response.winners
+                    }
+                };
+            });
         }
         // TODO: tell you if you made an invalid move - for now we just do nothing
     }

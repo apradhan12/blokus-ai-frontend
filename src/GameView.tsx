@@ -76,7 +76,7 @@ function draw(globalState: GlobalState, ctx: CanvasRenderingContext2D, mousePosi
     }
 
     // draw selected tile
-    if (mousePosition !== null && globalState.gameState!.selectedPiece !== null) {
+    if (mousePosition !== null && globalState.gameState!.selectedPiece !== null && globalState.gameState!.turn === globalState.gameState!.color) {
         const centerPosition = pixelsToCells(mousePosition[0], mousePosition[1]);
 
         drawPiece(allPieces[globalState.gameState!.selectedPiece], getSelectedPieceOrientation(globalState), ctx,
@@ -207,6 +207,8 @@ export function GameView() {
                     )
                 }
                 <br/>
+                Score: Orange { globalState.gameState!.scores[0] }, Blue { globalState.gameState!.scores[1] }
+                <br/>
                 <canvas ref={canvasRef} width={CELL_WIDTH_PX * BOARD_WIDTH + 1} height={CELL_WIDTH_PX * BOARD_HEIGHT + 1}
                         onMouseMove={updateMousePosition} onMouseOut={clearMousePosition}
                         onClick={attemptMove}
@@ -289,6 +291,7 @@ const setSelectedPiece = (pieceIndex: number, updateGlobalState: GlobalStateUpda
             board: globalState.gameState!.board,
             turn: globalState.gameState!.turn,
             color: globalState.gameState!.color,
+            scores: globalState.gameState!.scores,
             piecesRemaining: globalState.gameState!.piecesRemaining,
             opponentPiecesRemaining: globalState.gameState!.opponentPiecesRemaining,
             selectedPiece: pieceIndex,
@@ -304,6 +307,7 @@ const updatePieceOrientation = (pieceIndex: number, updateGlobalState: GlobalSta
             board: globalState.gameState!.board,
             turn: globalState.gameState!.turn,
             color: globalState.gameState!.color,
+            scores: globalState.gameState!.scores,
             piecesRemaining: globalState.gameState!.piecesRemaining.map(orientedPiece => orientedPiece.pieceId === pieceIndex ? {
                 pieceId: pieceIndex,
                 orientation: update(orientedPiece.orientation)
