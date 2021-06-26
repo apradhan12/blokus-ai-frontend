@@ -13,15 +13,11 @@ import {
     BOARD_WIDTH,
     CELL_WIDTH_PX,
     COLOR_LIST,
-    OFFSET_PX,
-    STARTING_POINT_LOCATIONS
+    OFFSET_PX, PIECE_TILE_WIDTH_PX,
+    STARTING_POINT_LOCATIONS, TILE_CANVAS_WIDTH_PX
 } from "./constants";
 import {allPieces, applyOrientation} from "./Pieces";
 import {Card, Col, Row} from "react-bootstrap";
-
-const CANVAS_BORDER_WIDTH_PX = 1;
-const TILE_CANVAS_WIDTH_PX = 100 - CANVAS_BORDER_WIDTH_PX * 2;
-const PIECE_TILE_WIDTH_PX = 15;
 
 function getSelectedPieceOrientation(globalState: GlobalState) {
     const selectedOrientedPiece = globalState.gameState!.piecesRemaining.find((piece: OrientedPiece) => piece.pieceId === globalState.gameState!.selectedPiece);

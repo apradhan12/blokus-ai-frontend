@@ -13,7 +13,7 @@ button.small {
 
 .pieceCard {
     position: relative;
-    float: left;
+    float: right;
     cursor: pointer;
 }
 
