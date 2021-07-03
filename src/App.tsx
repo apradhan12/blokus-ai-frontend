@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {ChangeEvent, useState} from 'react';
 import {Button, Col, Container, Row} from 'react-bootstrap';
 import './App.css';
 import {GameView} from "./GameView";
@@ -53,8 +53,10 @@ function App() {
 }
 
 function ColorChooser() {
+    const [serverAddress, setServerAddress] = useState(WEBSOCKET_URL);
+
     function selectColor(color: PlayerColor, updateGlobalState: (globalStateUpdater: (globalState: GlobalState) => GlobalState) => void) {
-        const webSocketController = new WebSocketController(WEBSOCKET_URL, updateGlobalState, () => {
+        const webSocketController = new WebSocketController(serverAddress, updateGlobalState, () => {
             // initializes the game state
             updateGlobalState((_: GlobalState) => ({
                 screen: Screen.InGame,
@@ -74,10 +76,14 @@ function ColorChooser() {
         });
     }
 
+    const updateServerAddress = (event: ChangeEvent<HTMLInputElement>) => setServerAddress(event.target.value)
+
     return (
         <MutableStateContext.Consumer>
             {({updateGlobalState}) => (
                 <div>
+                    <div>Input the URL of the server:</div>
+                    <input type="text" value={serverAddress} onChange={updateServerAddress} />
                     <div>Which color do you want to play as?</div>
                     <Button style={{backgroundColor: "orange"}} className="mr-2" onClick={() => selectColor(PlayerColor.Orange, updateGlobalState)}>Orange (plays first)</Button>
                     <Button style={{backgroundColor: "blue"}} onClick={() => selectColor(PlayerColor.Blue, updateGlobalState)}>Blue (plays second)</Button>
